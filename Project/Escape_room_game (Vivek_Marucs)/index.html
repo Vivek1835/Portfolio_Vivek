@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Don't let him find you</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<audio id="bgAudio" src="Material/haunted-house-ambience-21831.mp3" loop></audio>
+<body>
+  <div class="cutscene-container">
+    <div class="video">
+      <video id="cutsceneVideo" src="Material/Video_full.mp4" autoplay controls></video>
+    </div>
+    
+    <div class="text-overlay" id="textOverlay">
+      <h1>You are being kidnapped</h1>
+      <p>
+        You have to escape before he comes back to check on you. Choose your actions wisely and stay out of sight.
+      </p>
+    </div>
+
+    <div class="black-screen" id="blackScreen"></div>
+
+    <div class="image-screen" id="imageScreen">
+      <img src="Material/picture 1.png" alt="Scene">
+      <div class="danger-text">Don't let him see you. Escape if you want to live</div>
+    </div>
+
+    <div class="final-image" id="finalImage">
+      <img src="Material/picture 1.png" alt="Final Scene" id="finalImg">
+    </div>
+
+    <div id="timer">02:00</div>
+
+    <!-- Keypad Modal for Puzzle -->
+    <div class="keypad-modal" id="keypadModal" style="display: none;">
+    <div class="keypad-content">
+      <button class="close-btn" onclick="closeModal()">×</button>
+      <h2>🔓 Enter the code from the image</h2>
+      <p style="font-size: 0.9em; margin-bottom: 10px;">Clue: When class start in IM.</p>
+      <div class="code-display" id="codeDisplay">----</div>
+
+        <div class="keypad">
+          <button class="key" onclick="addDigit('1')">1</button>
+          <button class="key" onclick="addDigit('2')">2</button>
+          <button class="key" onclick="addDigit('3')">3</button>
+          <button class="key" onclick="addDigit('4')">4</button>
+          <button class="key" onclick="addDigit('5')">5</button>
+          <button class="key" onclick="addDigit('6')">6</button>
+          <button class="key" onclick="addDigit('7')">7</button>
+          <button class="key" onclick="addDigit('8')">8</button>
+          <button class="key" onclick="addDigit('9')">9</button>
+          <button class="key zero" onclick="addDigit('0')">0</button>
+        </div>
+
+        <div class="action-btns">
+          <button class="clear-btn" onclick="clearCode()">Clear</button>
+          <button class="submit-btn" onclick="checkCode()">Unlock</button>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+      </div>
+    </div>
+
+    <div id="navButtons">
+      <button id="backBtn">Back</button>
+      <button id="nextBtn" disabled>Next</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="timer.js"></script>
+</body>
+</html>

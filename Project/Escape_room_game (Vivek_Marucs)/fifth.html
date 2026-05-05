@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room - The Locked Chamber</title>
+</head>
+<body>
+    <div class="final-image">
+    <img src="Material/picture 5.png" alt="Puzzle 5" id="puzzleImg" style="cursor: pointer;">
+    </div>
+    <div id="timer">02:00</div>
+
+    <!-- Room Container (shown after click) -->
+    <div class="room-container" id="roomContainer" style="display: none;">
+        <img src="Material/picture 5.png" alt="Escape Room" class="room-image">
+        <div class="game-info">
+            <h1>🔒 The Locked Chamber</h1>
+            <div class="clue-counter">Clues found: <span id="clueCount">0</span>/4</div>
+            <div class="hint">💡 Click around the room to find clues!</div>
+            <div class="clues-found" id="cluesFound"></div>
+        </div>
+
+        <!-- Clickable hotspots (4 clues) -->
+        <div class="hotspot clue1" data-clue="1"></div>
+        <div class="hotspot clue2" data-clue="2"></div>
+        <div class="hotspot clue3" data-clue="3"></div>
+        <div class="hotspot clue4" data-clue="4"></div>
+
+        <!-- Keypad button next to door -->
+        <div class="keypad-btn" id="keypadBtn" title="Unlock the door"></div>
+    </div>
+
+    <!-- Clue Modal (popup when you find a clue) -->
+    <div class="modal" id="clueModal">
+        <div class="modal-content">
+            <h2 id="clueTitle">clue found!</h2>
+            <p id="clueText"></p>
+            <div class="digit" id="clueDigit"></div>
+            <br><br>
+            <button class="close-btn" onclick="closeClueModal()">Continue</button>
+        </div>
+    </div>
+
+    <!-- Keypad Modal (popup for entering code) -->
+    <div class="keypad-modal" id="keypadModal">
+        <div class="keypad-content">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <h2>🔓 unlock the door</h2>
+            <div class="code-display" id="codeDisplay">----</div>
+            
+            <div class="keypad">
+                <button class="key" onclick="addDigit('1')">1</button>
+                <button class="key" onclick="addDigit('2')">2</button>
+                <button class="key" onclick="addDigit('3')">3</button>
+                <button class="key" onclick="addDigit('4')">4</button>
+                <button class="key" onclick="addDigit('5')">5</button>
+                <button class="key" onclick="addDigit('6')">6</button>
+                <button class="key" onclick="addDigit('7')">7</button>
+                <button class="key" onclick="addDigit('8')">8</button>
+                <button class="key" onclick="addDigit('9')">9</button>
+                <button class="key zero" onclick="addDigit('0')">0</button>
+            </div>
+
+            <div class="action-btns">
+                <button class="clear-btn" onclick="clearCode()">Clear</button>
+                <button class="submit-btn" onclick="checkCode()">Unlock</button>
+            </div>
+            
+            <div class="error-msg" id="errorMsg"></div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- JAVASCRIPT CODE STARTS HERE                 -->
+    <!-- ============================================ -->
+    <script>
+        /* ============================================ */
+        /* PUZZLE IMAGE CLICK DETECTION                 */
+        /* ============================================ */
+
+        // Get the puzzle image element
+        const puzzleImg = document.getElementById('puzzleImg');
+        // Get the room container that shows the full puzzle interface
+        const roomContainer = document.getElementById('roomContainer');
+
+        // Add click event listener to the puzzle image
+        puzzleImg.addEventListener('click', function(event) {
+            // Get the position and dimensions of the puzzle image on screen
+            const rect = puzzleImg.getBoundingClientRect();
+            // Calculate the X position of the mouse click relative to the image
+            const x = event.clientX - rect.left;
+            // Calculate the Y position of the mouse click relative to the image
+            const y = event.clientY - rect.top;
+            // Get the width of the image
+            const width = rect.width;
+            // Get the height of the image
+            const height = rect.height;
+
+            // Check if click is in middle area (40% to 60% of width and height)
+            if (x > width * 0.4 && x < width * 0.6 && y > height * 0.4 && y < height * 0.6) {
+                // Hide the puzzle image
+                puzzleImg.style.display = 'none';
+                // Show the room container with all the puzzle elements
+                roomContainer.style.display = 'block';
+            }
+        });
+
+        /* ============================================ */
+        /* GAME STATE - CLUE TRACKING                   */
+        /* ============================================ */
+
+        // Object to track which clues have been found (true/false for clues 1-4)
+        let foundClues = {
+            1: false,
+            2: false,
+            3: false,
+            4: false
+        };
+        
+        // Object with the digit that each clue reveals (together they make the code)
+        let clueDigits = {
+            1: '3',  // First digit is 3
+            2: '7',  // Second digit is 7
+            3: '2',  // Third digit is 2
+            4: '9'   // Fourth digit is 9
+        };
+
+        // Object with the message text for each clue popup
+        let clueMessages = {
+            1: 'You found an old book on the shelf. Inside it says: "The first digit in the code is..."',
+            2: 'You examine the broken window. There is a number etched into the metal...',
+            3: 'You look through the window and see a number drawn in the dust...',
+            4: 'On the shelf you find a bottle with a note inside. It says a number...'
+        };
+
+        // Variable to store the player's current code entry
+        let currentCode = '';
+        // The correct code that must be entered to unlock the door (3729)
+        const correctCode = '3729';
+
+        /* ============================================ */
+        /* HOTSPOT SETUP - CLUE LOCATIONS               */
+        /* ============================================ */
+
+        // Get all hotspot elements (the clickable areas for clues)
+        document.querySelectorAll('.hotspot').forEach(hotspot => {
+            // Add click event listener to each hotspot
+            hotspot.addEventListener('click', function() {
+                // Get the clue number (1, 2, 3, or 4) from the data-clue attribute
+                const clueNum = this.getAttribute('data-clue');
+                // Mark this clue as found
+                foundClues[clueNum] = true;
+                // Add CSS class to show the hotspot has been clicked
+                this.classList.add('found');
+                // Show the clue popup modal
+                showClue(clueNum);
+                // Update the clue counter display
+                updateClueCount();
+            });
+        });
+
+        /* ============================================ */
+        /* SHOW CLUE MODAL - DISPLAY CLUE POPUP         */
+        /* ============================================ */
+
+        // Function to display a clue in the clue modal
+        function showClue(clueNum) {
+            // Set the clue modal title (e.g., "🔍 clue #1 found!")
+            document.getElementById('clueTitle').textContent = '🔍 clue #' + clueNum + ' found!';
+            // Set the clue description text
+            document.getElementById('clueText').textContent = clueMessages[clueNum];
+            // Set the digit that this clue reveals
+            document.getElementById('clueDigit').textContent = clueDigits[clueNum];
+            // Show the clue modal by setting display to flex
+            document.getElementById('clueModal').style.display = 'flex';
+        }
+
+        /* ============================================ */
+        /* CLOSE CLUE MODAL - HIDE CLUE POPUP           */
+        /* ============================================ */
+
+        // Function to close the clue modal
+        function closeClueModal() {
+            // Hide the clue modal by setting display to none
+            document.getElementById('clueModal').style.display = 'none';
+        }
+
+        /* ============================================ */
+        /* UPDATE CLUE COUNT - TRACK PROGRESS            */
+        /* ============================================ */
+
+        // Function to update the clue counter and activate keypad when ready
+        function updateClueCount() {
+            // Count how many clues have been found (count the true values)
+            const count = Object.values(foundClues).filter(v => v).length;
+            // Update the clue count display (e.g., "Clues found: 3/4")
+            document.getElementById('clueCount').textContent = count;
+            
+            // Build a string of all found clues and their digits
+            let cluesText = '';
+            // Loop through clues 1 to 4
+            for (let i = 1; i <= 4; i++) {
+                // If this clue was found
+                if (foundClues[i]) {
+                    // Add it to the display string
+                    cluesText += 'Siffer ' + i + ': ' + clueDigits[i] + ' ';
+                }
+            }
+            // Update the clues found display on the page
+            document.getElementById('cluesFound').textContent = cluesText;
+
+            // If all 4 clues have been found
+            if (count === 4) {
+                // Add the 'active' CSS class to the keypad button to enable it
+                document.getElementById('keypadBtn').classList.add('active');
+            }
+        }
+
+        /* ============================================ */
+        /* KEYPAD BUTTON - OPEN CODE ENTRY              */
+        /* ============================================ */
+
+        // Add click event listener to the keypad button
+        document.getElementById('keypadBtn').addEventListener('click', function() {
+            // Count how many clues have been found
+            const count = Object.values(foundClues).filter(v => v).length;
+            // Check if all 4 clues have been found
+            if (count === 4) {
+                // Show the keypad modal
+                document.getElementById('keypadModal').style.display = 'flex';
+                // Reset the current code
+                currentCode = '';
+                // Update the code display to show dashes
+                updateCodeDisplay();
+            } else {
+                // Show alert if not all clues found
+                alert('You must find all 4 clues first!');
+            }
+        });
+
+        /* ============================================ */
+        /* KEYPAD FUNCTIONS - CODE ENTRY SYSTEM         */
+        /* ============================================ */
+
+        // Function to add a digit to the current code
+        function addDigit(digit) {
+            // Check if the code is not already 4 digits long
+            if (currentCode.length < 4) {
+                // Add the digit to the current code
+                currentCode += digit;
+                // Update the display to show the new code
+                updateCodeDisplay();
+                // Clear any previous error message
+                document.getElementById('errorMsg').textContent = '';
+            }
+        }
+
+        // Function to clear the entire code
+        function clearCode() {
+            // Reset the current code to empty string
+            currentCode = '';
+            // Update the display to show empty code (----)
+            updateCodeDisplay();
+            // Clear any error message
+            document.getElementById('errorMsg').textContent = '';
+        }
+
+        // Function to update the code display on screen
+        function updateCodeDisplay() {
+            // Start with the current code
+            let display = currentCode;
+            // Add dashes to fill it to 4 characters (e.g., "37--" if currentCode is "37")
+            while (display.length < 4) {
+                display += '-';
+            }
+            // Update the code display element on the page
+            document.getElementById('codeDisplay').textContent = display;
+        }
+
+        /* ============================================ */
+        /* CHECK CODE - VERIFY SOLUTION                 */
+        /* ============================================ */
+
+        // Function to check if the entered code is correct
+        function checkCode() {
+            // Check if the code is exactly 4 digits long
+            if (currentCode.length !== 4) {
+                // Show error message if code is not 4 digits
+                document.getElementById('errorMsg').textContent = '⚠️ code must have 4 numbers!';
+                return;
+            }
+
+            // Check if the entered code matches the correct code
+            if (currentCode === correctCode) {
+                // Save to localStorage that this puzzle has been solved
+                localStorage.setItem('puzzle_fifth.html', 'solved');
+                // Enable the next button so player can proceed
+                enableNext();
+                // Move to the next page (sixth.html)
+                window.location.href = 'sixth.html';
+            } else {
+                // Show error message for incorrect code
+                document.getElementById('errorMsg').textContent = '❌ wrong code! try again...';
+                // Reset the code
+                currentCode = '';
+                // Update the display back to dashes
+                updateCodeDisplay();
+            }
+        }
+
+        /* ============================================ */
+        /* CLOSE KEYPAD MODAL - HIDE CODE ENTRY         */
+        /* ============================================ */
+
+        // Function to close the keypad modal
+        function closeModal() {
+            // Hide the keypad modal by setting display to none
+            document.getElementById('keypadModal').style.display = 'none';
+            // Reset the current code
+            currentCode = '';
+            // Update the display back to empty
+            updateCodeDisplay();
+            // Clear any error message
+            document.getElementById('errorMsg').textContent = '';
+        }
+    </script>
+    <!-- ============================================ -->
+    <!-- JAVASCRIPT CODE ENDS HERE                   -->
+    <!-- ============================================ -->
+    <script>
+    /* ============================================ */
+    /* PAGE LOAD FADE-IN EFFECT                     */
+    /* ============================================ */
+
+    // Listen for when the page has finished loading all content
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get the final image element
+      const finalImage = document.querySelector('.final-image');
+      // Make the final image visible by setting opacity to 1
+      finalImage.style.opacity = '1';
+    });
+    </script>
+
+    <div id="navButtons">
+      <button id="backBtn">Back</button>
+      <button id="nextBtn" disabled>Next</button>
+    </div>
+
+    <script>
+    /* ============================================ */
+    /* NAVIGATION SETUP                             */
+    /* ============================================ */
+
+    // Define the current page filename
+    const currentPage = 'fifth.html';
+    // Array of all pages in the game in order
+    const pages = ['index.html', 'second.html', 'third.html', 'fourth.html', 'fifth.html', 'sixth.html'];
+    // Find the index of the current page in the pages array
+    const currentIndex = pages.indexOf(currentPage);
+    // Get the back button element from HTML
+    const backBtn = document.getElementById('backBtn');
+    // Get the next button element from HTML
+    const nextBtn = document.getElementById('nextBtn');
+
+    /* ============================================ */
+    /* BACK BUTTON SETUP                            */
+    /* ============================================ */
+
+    // Check if we're not on the first page
+    if (currentIndex > 0) {
+      // Add click event listener to back button
+      backBtn.addEventListener('click', () => window.location.href = pages[currentIndex - 1]);
+    } else {
+      // Disable back button if we're on the first page
+      backBtn.disabled = true;
+    }
+
+    /* ============================================ */
+    /* NEXT BUTTON FUNCTION                         */
+    /* ============================================ */
+
+    // Function to enable the next button and its functionality
+    function enableNext() {
+      // Enable the next button by removing disabled state
+      nextBtn.disabled = false;
+      // Add click event listener to next button
+      nextBtn.addEventListener('click', () => window.location.href = pages[currentIndex + 1]);
+    }
+
+    /* ============================================ */
+    /* CHECK IF PUZZLE ALREADY SOLVED               */
+    /* ============================================ */
+
+    // Check localStorage to see if this puzzle has been solved before
+    if (localStorage.getItem('puzzle_' + currentPage) === 'solved') {
+      // If puzzle was already solved, enable next button immediately
+      enableNext();
+    }
+    </script>
+    <script src="timer.js"></script>
+
+
+
+<style>
+/* ============================================ */
+/* THIS IS YOUR CSS FILE (style.css)           */
+/* ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #000;
+    color: #e0e0e0;
+    overflow: hidden;
+}
+
+.room-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: #1a1a1a;
+    background-size: cover;
+    background-position: center;
+    cursor: crosshair;
+    overflow: hidden;
+}
+
+.room-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.game-info {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 15px 25px;
+    border-radius: 8px;
+    border: 2px solid #ff6b6b;
+    max-width: 300px;
+    z-index: 100;
+}
+
+.game-info h1 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #ff6b6b;
+}
+
+.clue-counter {
+    font-size: 14px;
+    color: #4ecdc4;
+    margin-bottom: 5px;
+}
+
+.hint {
+    font-size: 12px;
+    color: #ffd93d;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+/* ============================================ */
+/* CLICKABLE HOTSPOTS (adjust position here)   */
+/* ============================================ */
+.hotspot {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    border: 3px solid rgba(255, 107, 107, 0.7);
+    border-radius: 50%;
+    transition: all 0.3s;
+    z-index: 10;
+    background: rgba(255, 107, 107, 0.2);
+}
+
+.hotspot:hover {
+    border-color: rgba(255, 107, 107, 1);
+    background: rgba(255, 107, 107, 0.4);
+    transform: scale(1.1);
+}
+
+.hotspot.found {
+    border-color: rgba(78, 205, 196, 0.8);
+    background: rgba(78, 205, 196, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Left shelf - Clue 1 */
+.clue1 {
+    top: 50%;
+    left: 5%;
+    opacity: 0;
+}
+
+/* Lamp - Clue 2 */
+.clue2 {
+    top: calc(30% + 50px);
+    left: calc(24% - 15px);
+    opacity: 0;
+}
+
+/* Right window - Clue 3 */
+.clue3 {
+    top: 35%;
+    right: 15%;
+    opacity: 0;
+}
+
+/* Right shelf - Clue 4 */
+.clue4 {
+    top: calc(60% + 40px);
+    right: 5%;
+    opacity: 0;
+}
+
+/* Keypad button next to door */
+.keypad-btn {
+    position: absolute;
+    top: 48%;
+    left: 57%;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 107, 107, 0.4);
+    border: 2px solid #ff6b6b;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.keypad-btn:hover {
+    background: rgba(255, 107, 107, 0.8);
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+}
+
+.keypad-btn.active {
+    background: rgba(78, 205, 196, 0.6);
+    border-color: #4ecdc4;
+    animation: glow 1.5s infinite;
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(78, 205, 196, 0.5); }
+    50% { box-shadow: 0 0 25px rgba(78, 205, 196, 0.9); }
+}
+
+/* ============================================ */
+/* MODAL FOR CLUES                             */
+/* ============================================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+    padding: 30px;
+    border-radius: 10px;
+    border: 3px solid #ff6b6b;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 107, 107, 0.5);
+}
+
+.modal-content h2 {
+    color: #ff6b6b;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.modal-content p {
+    color: #e0e0e0;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.digit {
+    display: inline-block;
+    background: #4ecdc4;
+    color: #000;
+    font-size: 48px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.close-btn {
+    background: #ff6b6b;
+    color: #fff;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s;
+}
+
+.close-btn:hover {
+    background: #ff5252;
+    transform: scale(1.05);
+}
+
+/* ============================================ */
+/* KEYPAD MODAL                                */
+/* ============================================ */
+.keypad-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+}
+
+.keypad-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    padding: 40px;
+    border-radius: 15px;
+    border: 3px solid #4ecdc4;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(78, 205, 196, 0.5);
+}
+
+.keypad-content h2 {
+    color: #4ecdc4;
+    margin-bottom: 20px;
+    font-size: 28px;
+}
+
+.code-display {
+    background: #000;
+    color: #4ecdc4;
+    font-size: 48px;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 2px solid #4ecdc4;
+    letter-spacing: 10px;
+    font-weight: bold;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+    max-width: 250px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.key {
+    background: #333;
+    color: #fff;
+    border: 2px solid #555;
+    padding: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-family: 'Courier New', monospace;
+}
+
+.key:hover {
+    background: #4ecdc4;
+    color: #000;
+    border-color: #4ecdc4;
+    transform: scale(1.05);
+}
+
+.key:active {
+    transform: scale(0.95);
+}
+
+.key.zero {
+    grid-column: 2;
+}
+
+.action-btns {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.clear-btn, .submit-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s;
+}
+
+.clear-btn {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.clear-btn:hover {
+    background: #ff5252;
+}
+
+.submit-btn {
+    background: #4ecdc4;
+    color: #000;
+    font-weight: bold;
+}
+
+.submit-btn:hover {
+    background: #3dbdb4;
+}
+
+.error-msg {
+    color: #ff6b6b;
+    margin-top: 15px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.clues-found {
+    color: #ffd93d;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+#timer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2em;
+    color: red;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+/* Navigation buttons */
+#navButtons {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 50;
+}
+
+#navButtons button {
+  margin-right: 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: 1px solid white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#navButtons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#navButtons button:hover:not(:disabled) {
+  background: rgba(255,255,255,0.1);
+}
+   </style>
+
+</body>
+</html>

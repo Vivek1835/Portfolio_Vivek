@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<audio src="Material/haunted-house-ambience-21831.mp3" loop autoplay></audio>
+<div class="final-image">
+<img src="Material/picture 3.png" alt="Open Door" id="doorImage" style="cursor: pointer;">
+<div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 1.2em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); text-align: center;">Click the center of the door to proceed safely,<br>or the edges to hide in the current room.</div>
+</div>
+<div id="timer">02:00</div>
+
+<script>
+/* ============================================ */
+/* DOOR CHOICE LOGIC                            */
+/* ============================================ */
+
+// Get the door image element that player will click
+const doorImage = document.getElementById('doorImage');
+
+// Listen for clicks on the door image
+doorImage.addEventListener('click', function(event) {
+  // Get the position and size of the image on screen
+  const rect = doorImage.getBoundingClientRect();
+  // Calculate the X coordinate of the click relative to the image
+  const x = event.clientX - rect.left;
+  // Calculate the Y coordinate of the click relative to the image
+  const y = event.clientY - rect.top;
+  // Get the width of the image element
+  const width = rect.width;
+  // Get the height of the image element
+  const height = rect.height;
+
+  // Check if click is in the middle area of the door (30% to 70%)
+  if (x > width * 0.3 && x < width * 0.7 && y > height * 0.3 && y < height * 0.7) {
+    // Player clicked the center - proceed safely to fourth room
+    window.location.href = 'fourth.html';
+  } else {
+    // Player clicked the edges - hide in current room (go to fifth room)
+    window.location.href = 'fifth.html';
+  }
+});
+</script>
+
+<script>
+/* ============================================ */
+/* PAGE LOAD FADE-IN EFFECT                     */
+/* ============================================ */
+
+// Listen for when the page has finished loading all content
+document.addEventListener('DOMContentLoaded', () => {
+  // Get the final image element
+  const finalImage = document.querySelector('.final-image');
+  // Make the final image visible by setting opacity to 1
+  finalImage.style.opacity = '1';
+});
+</script>
+
+<div id="navButtons">
+  <button id="backBtn">Back</button>
+  <button id="nextBtn">Next</button>
+</div>
+
+<script>
+/* ============================================ */
+/* NAVIGATION SETUP                             */
+/* ============================================ */
+
+// Define the current page filename
+const currentPage = 'third.html';
+// Array of all pages in the game in order
+const pages = ['index.html', 'second.html', 'third.html', 'fourth.html', 'fifth.html', 'sixth.html'];
+// Find the index of the current page in the pages array
+const currentIndex = pages.indexOf(currentPage);
+// Get the back button element from HTML
+const backBtn = document.getElementById('backBtn');
+// Get the next button element from HTML
+const nextBtn = document.getElementById('nextBtn');
+
+/* ============================================ */
+/* BACK BUTTON SETUP                            */
+/* ============================================ */
+
+// Check if we're not on the first page
+if (currentIndex > 0) {
+  // Add click event listener to back button
+  backBtn.addEventListener('click', () => window.location.href = pages[currentIndex - 1]);
+} else {
+  // Disable back button if we're on the first page
+  backBtn.disabled = true;
+}
+
+/* ============================================ */
+/* NEXT BUTTON FUNCTION                         */
+/* ============================================ */
+
+// Function to enable the next button and its functionality
+function enableNext() {
+  // Enable the next button by removing disabled state
+  nextBtn.disabled = false;
+  // Add click event listener to next button
+  nextBtn.addEventListener('click', () => window.location.href = pages[currentIndex + 1]);
+}
+
+// No puzzle, enable next immediately
+enableNext();
+</script>
+<script src="timer.js"></script>
+</body>
+</html>

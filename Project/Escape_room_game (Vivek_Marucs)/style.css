@@ -1,0 +1,616 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  background: #000;
+}
+
+.cutscene-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.text-overlay {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 800px;
+  text-align: center;
+  color: white;
+  opacity: 0;
+  animation: fadeIn 2s ease-in-out forwards;
+  z-index: 10;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.text-overlay h1 {
+  font-size: 3em;
+  margin-bottom: 20px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.text-overlay p {
+  font-size: 1.2em;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.black-screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  opacity: 0;
+  z-index: 20;
+}
+
+.image-screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 0;
+  z-index: 30;
+}
+
+.image-screen img {
+  width: 90%;
+  max-width: 600px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 40px;
+}
+
+.danger-text {
+  font-size: 2.5em;
+  color: #ff4444;
+  font-weight: bold;
+  text-shadow: 2px 2px 12px rgba(255, 0, 0, 0.6);
+  letter-spacing: 3px;
+  opacity: 0;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.final-image {
+  position: absolute;
+  width: 90%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 0;
+  z-index: 40;
+}
+
+.final-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#timer {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 2em;
+  color: red;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 50;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 2px 2px 12px rgba(255, 0, 0, 0.6);
+  }
+  50% {
+    opacity: 0.7;
+    text-shadow: 2px 2px 20px rgba(255, 0, 0, 0.9);
+  }
+}
+
+.video-container{
+  position: relative;
+  padding-bottom: 56.25%;
+  padding-top: 250px;
+  height: 0;
+}
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}  
+
+/* Keypad styles */
+.keypad-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 60;
+}
+
+.keypad-content {
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  color: white;
+  max-width: 300px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #ccc;
+}
+
+.keypad-content h2 {
+  margin-bottom: 20px;
+}
+
+.code-display {
+  font-size: 2em;
+  margin-bottom: 20px;
+  background: #000;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.key {
+  padding: 15px;
+  font-size: 1.2em;
+  background: #444;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+}
+
+.key:hover {
+  background: #666;
+}
+
+.zero {
+  grid-column: span 3;
+}
+
+.action-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.clear-btn, .submit-btn {
+  padding: 10px 20px;
+  font-size: 1em;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.clear-btn {
+  background: #f00;
+  color: white;
+}
+
+.submit-btn {
+  background: #0f0;
+  color: black;
+}
+
+.error-msg {
+  margin-top: 10px;
+  color: #f00;
+}
+
+/*end of index.html*/
+
+
+/* ============================================ */
+/* CLICKABLE HOTSPOTS (adjust position here)   */
+/* ============================================ */
+.hotspot {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    border: 3px solid rgba(255, 107, 107, 0.7);
+    border-radius: 50%;
+    transition: all 0.3s;
+    z-index: 10;
+    background: rgba(255, 107, 107, 0.2);
+}
+
+.hotspot:hover {
+    border-color: rgba(255, 107, 107, 1);
+    background: rgba(255, 107, 107, 0.4);
+    transform: scale(1.1);
+}
+
+.hotspot.found {
+    border-color: rgba(78, 205, 196, 0.8);
+    background: rgba(78, 205, 196, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Left shelf - Clue 1 */
+.clue1 {
+    top: 50%;
+    left: 5%;
+    opacity: 0;
+}
+
+/* Lamp - Clue 2 */
+.clue2 {
+    top: calc(30% + 50px);
+    left: calc(24% - 15px);
+    opacity: 0;
+}
+
+/* Right window - Clue 3 */
+.clue3 {
+    top: 35%;
+    right: 15%;
+    opacity: 0;
+}
+
+/* Right shelf - Clue 4 */
+.clue4 {
+    top: calc(60% + 40px);
+    right: 5%;
+    opacity: 0;
+}
+
+/* Keypad button next to door */
+.keypad-btn {
+    position: absolute;
+    top: 48%;
+    left: 57%;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 107, 107, 0.4);
+    border: 2px solid #ff6b6b;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.keypad-btn:hover {
+    background: rgba(255, 107, 107, 0.8);
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+}
+
+.keypad-btn.active {
+    background: rgba(78, 205, 196, 0.6);
+    border-color: #4ecdc4;
+    animation: glow 1.5s infinite;
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(78, 205, 196, 0.5); }
+    50% { box-shadow: 0 0 25px rgba(78, 205, 196, 0.9); }
+}
+
+/* ============================================ */
+/* MODAL FOR CLUES                             */
+/* ============================================ */
+.fifth-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+}
+
+.fifth-modal-content {
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+    padding: 30px;
+    border-radius: 10px;
+    border: 3px solid #ff6b6b;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 107, 107, 0.5);
+}
+
+.fifth-modal-content h2 {
+    color: #ff6b6b;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.fifth-modal-content p {
+    color: #e0e0e0;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.digit {
+    display: inline-block;
+    background: #4ecdc4;
+    color: #000;
+    font-size: 48px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.fifth-close-btn {
+    background: #ff6b6b;
+    color: #fff;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s;
+}
+
+.fifth-close-btn:hover {
+    background: #ff5252;
+    transform: scale(1.05);
+}
+
+/* ============================================ */
+/* FIFTH KEYPAD MODAL                                */
+/* ============================================ */
+.fifth-keypad-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+}
+
+.fifth-keypad-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    padding: 40px;
+    border-radius: 15px;
+    border: 3px solid #4ecdc4;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(78, 205, 196, 0.5);
+}
+
+.fifth-keypad-content h2 {
+    color: #4ecdc4;
+    margin-bottom: 20px;
+    font-size: 28px;
+}
+
+.fifth-code-display {
+    background: #000;
+    color: #4ecdc4;
+    font-size: 48px;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 2px solid #4ecdc4;
+    letter-spacing: 10px;
+    font-weight: bold;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fifth-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+    max-width: 250px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.fifth-key {
+    background: #333;
+    color: #fff;
+    border: 2px solid #555;
+    padding: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-family: 'Courier New', monospace;
+}
+
+.fifth-key:hover {
+    background: #4ecdc4;
+    color: #000;
+    border-color: #4ecdc4;
+    transform: scale(1.05);
+}
+
+.fifth-key:active {
+    transform: scale(0.95);
+}
+
+.fifth-zero {
+    grid-column: 2;
+}
+
+.fifth-action-btns {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.fifth-clear-btn, .fifth-submit-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s;
+}
+
+.fifth-clear-btn {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.fifth-clear-btn:hover {
+    background: #ff5252;
+}
+
+.fifth-submit-btn {
+    background: #4ecdc4;
+    color: #000;
+    font-weight: bold;
+}
+
+.fifth-submit-btn:hover {
+    background: #3dbdb4;
+}
+
+.fifth-error-msg {
+    color: #ff6b6b;
+    margin-top: 15px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.clues-found {
+    color: #ffd93d;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+#timer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2em;
+    color: red;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+/* Navigation buttons */
+#navButtons {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 50;
+}
+
+#navButtons button {
+  margin-right: 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: 1px solid white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#navButtons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#navButtons button:hover:not(:disabled) {
+  background: rgba(255,255,255,0.1);
+}

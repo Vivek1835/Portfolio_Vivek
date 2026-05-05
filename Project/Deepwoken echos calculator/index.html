@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Deepwoken — Echoes Calculator (Polished)</title>
+  <style>
+    @keyframes fadeInUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform:translateY(0);} }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100%{ transform: scale(1); } }
+
+    :root{
+      --bg-1: #071021;
+      --bg-2: #081428;
+      --card: rgba(255,255,255,0.04);
+      --glass: rgba(255,255,255,0.02);
+      --muted: #9aa6b2;
+      --accent: #6fb3ff;
+      --accent-2: #8b5cf6;
+      --accent-3: #ffb86b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --shadow: 0 10px 30px rgba(4,8,16,0.6);
+      --glass-border: rgba(255,255,255,0.06);
+      --card-radius: 14px;
+      --glass-blur: 8px;
+      --glow: 0 8px 30px rgba(111,179,255,0.12);
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-1) 0%,var(--bg-2) 100%);overflow:auto;}
+    /* animated fog layer using gradient + blur pseudo elements */
+    body::before{
+      content:"";position:fixed;inset:0;z-index:0;
+      background: radial-gradient(ellipse at 10% 20%, rgba(139,92,246,0.06) 0%, transparent 20%),
+                  radial-gradient(ellipse at 90% 80%, rgba(111,179,255,0.05) 0%, transparent 18%),
+                  linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06));
+      filter: blur(40px) saturate(120%);
+      pointer-events:none;
+    }
+
+    /* canvas layer for particles */
+    #particle-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:screen}
+
+    .wrap{position:relative;z-index:1;max-width:1100px;margin:28px auto;padding:28px;}
+    header{display:flex;align-items:center;gap:18px;margin-bottom:14px;animation:fadeInUp .36s both;}
+    .logo{
+      width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#08223f, #0f1f3a);
+      display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(3,8,18,0.6), inset 0 -6px 20px rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.03);
+    }
+    .logo svg{width:36px;height:36px;filter:drop-shadow(0 4px 10px rgba(139,92,246,0.12));}
+    h1{font-size:1.6rem;color:#e6f0ff;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:20px;align-items:start;}
+    @media(max-width:980px){.grid{grid-template-columns:1fr;}}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:var(--card-radius);box-shadow:var(--shadow);border:1px solid var(--glass-border);backdrop-filter: blur(var(--glass-blur));}
+
+    /* Triumphs list */
+    .controls-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .muted{color:var(--muted);font-size:0.9rem}
+    .tri-list{display:grid;gap:10px;max-height:620px;overflow:auto;padding-right:6px}
+    .tri-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);transition:all .18s; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    .tri-item:hover{transform:translateY(-3px);box-shadow:var(--glow)}
+    .tri-left{display:flex;align-items:center;gap:12px;flex:1}
+    .chk{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,0.06);display:inline-grid;place-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01))}
+    .tri-item input[type="checkbox"]{appearance:none;outline:none;border:0;margin:0;width:18px;height:18px;border-radius:4px;background:rgba(255,255,255,0.02);box-shadow:inset 0 -3px 6px rgba(0,0,0,0.5)}
+    .tri-item input[type="checkbox"]:checked{background:linear-gradient(135deg,#6fb3ff,#8b5cf6);box-shadow:0 6px 18px rgba(111,179,255,0.06);border:1px solid rgba(255,255,255,0.06)}
+    .tri-item strong{color:#eaf6ff;font-size:0.98rem}
+    .tri-right{display:flex;align-items:center;gap:10px}
+
+    .tri-item input[type="number"]{width:84px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);color:#e8f6ff}
+
+    /* controls card */
+    .small{font-size:0.9rem;color:var(--muted)}
+    .mod-list{display:grid;gap:8px;margin-top:6px;max-height:260px;overflow:auto;padding-right:6px}
+    .mod-list label{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
+    .mod-list input[type="checkbox"]{width:16px;height:16px;border-radius:4px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    input[type="number"], input[type="text"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:#eaf6ff}
+    .help{padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,200,120,0.05), rgba(255,255,255,0.01));border:1px solid rgba(255,200,120,0.06);color:#ffd9a8}
+
+    .summary{margin-top:12px;padding:14px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03)}
+    .summary .rowline{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .big{font-weight:800;font-size:1.5rem;color:#eaf6ff}
+    .muted-small{color:var(--muted);font-size:0.9rem}
+
+    /* rank badge styles */
+    .rank-badge{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:800;font-size:0.95rem;letter-spacing:0.6px;box-shadow:0 6px 18px rgba(0,0,0,0.5);transform-origin:center center}
+    .rank-W{background:linear-gradient(90deg,#facc15,#f59e0b);color:#0b1220;animation:pulse 2s ease-in-out infinite}
+    .rank-S{background:linear-gradient(90deg,#a78bfa,#7c3aed);color:white;animation:pulse 2.2s ease-in-out infinite}
+    .rank-A{background:linear-gradient(90deg,#34d399,#059669);color:white}
+    .rank-B{background:linear-gradient(90deg,#60a5fa,#2563eb);color:white}
+    .rank-C{background:linear-gradient(90deg,#fbbf24,#f97316);color:white}
+    .rank-D{background:linear-gradient(90deg,#fb923c,#f97316);color:white}
+    .rank-E{background:linear-gradient(90deg,#94a3b8,#64748b);color:white}
+
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .btn{padding:8px 12px;border-radius:9px;border:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#041426;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(139,92,246,0.08)}
+    .btn.secondary{background:linear-gradient(90deg,#29323c,#1b2730);color:#a8b4c1}
+    .btn.danger{background:linear-gradient(90deg,#ef4444,#ef6b6b);color:white}
+    .btn.green{background:linear-gradient(90deg,#34d399,#10b981);color:#04201a}
+
+    footer{margin-top:18px;color:var(--muted);font-size:0.9rem;text-align:center}
+
+    /* subtle focus */
+    input:focus{outline:none;box-shadow:0 6px 18px rgba(111,179,255,0.06);border:1px solid rgba(111,179,255,0.12)}
+  </style>
+</head>
+<body>
+  <!-- particle canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden>
+        <!-- stylized "E" icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6h12M4 12h12M4 18h8" stroke="#cfeeff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Deepwoken — Echoes Calculator</h1>
+        <p class="lead">Select Triumphs, apply Echo Modifiers, add custom echoes — see total Echoes & rank live with atmospheric visuals.</p>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- Left: Triumphs -->
+      <section class="card" aria-labelledby="tri-title">
+        <div class="controls-top">
+          <div>
+            <strong id="tri-title" style="color:#eaf6ff">Triumphs (Echo values)</strong>
+            <div class="muted" style="margin-top:4px">Tick what you did. For Power, set the level to multiply by 0.75 each.</div>
+          </div>
+          <div class="muted-small">Base echoes (no modifiers)</div>
+        </div>
+
+        <div id="triumphs" class="tri-list" aria-live="polite"></div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button id="checkAll" class="btn">Check all</button>
+          <button id="uncheckAll" class="btn secondary">Uncheck all</button>
+          <button id="resetCounts" class="btn danger">Reset counts</button>
+        </div>
+
+        <div style="margin-top:14px" class="muted-small">If a Triumph is missing, add it from Controls as a custom echo.</div>
+      </section>
+
+      <!-- Right: Controls -->
+      <aside class="card" aria-labelledby="controls-title">
+        <strong id="controls-title" style="color:#eaf6ff">Controls & Modifiers</strong>
+        <div class="muted" style="margin-top:6px">Apply modifiers, set multiplier, add custom echoes, and export or copy results.</div>
+
+        <div style="margin-top:12px" class="controls">
+          <label style="display:flex;align-items:center;gap:10px"><input id="modAgg" type="checkbox"> <span class="small">Enable Echo Modifiers (toggle below)</span></label>
+
+          <div id="modList" style="display:block" class="mod-list" aria-hidden="false">
+            <!-- modifiers will be present here -->
+            <label><input type="checkbox" class="mod" data-id="fragile" data-mult="1.5"> Fragile Heart (+50%) — All incoming mob damage doubled</label>
+            <label><input type="checkbox" class="mod" data-id="crestfallen" data-mult="1.1"> Crestfallen (+10%) — Armor permanently broken</label>
+            <label><input type="checkbox" class="mod" data-id="deepchamp" data-mult="1.2"> Deep Champion (+20%) — Depths trial corrupted</label>
+            <label><input type="checkbox" class="mod" data-id="dissonant" data-mult="1.3"> Dissonant (+30%) — Cannot use Resonance</label>
+            <label><input type="checkbox" class="mod" data-id="hollow" data-mult="1.1"> Hollow (+10%) — Overworld deaths to Depths</label>
+            <label><input type="checkbox" class="mod" data-id="slowburn" data-mult="1.1"> Slowburn (+10%) — Healing reduced</label>
+            <label><input type="checkbox" class="mod" data-id="dealbreaker" data-mult="1.05"> Dealbreaker (+5%) — Sell price -25%</label>
+            <label><input type="checkbox" class="mod" data-id="loosechange" data-mult="1.2"> Loose Change (+20%) — Lose notes on hit</label>
+            <label><input type="checkbox" class="mod" data-id="highvel" data-mult="1.1"> High Velocity (+10%) — Fall damage amplified</label>
+            <label><input type="checkbox" class="mod" data-id="ironwoken" data-mult="1.1"> Ironwoken (+10%) — No notes/items from players</label>
+            <label><input type="checkbox" class="mod" data-id="onebit" data-mult="1.2"> One Bit (+20%) — Cannot swim</label>
+            <label><input type="checkbox" class="mod" data-id="destined" data-mult="1.2"> Destined (+20%) — Fate chooses Power increases</label>
+            <label><input type="checkbox" class="mod" data-id="vow" data-mult="1.05"> Vow of Thorns (+5%) — Boost progression, but deaths to Depths</label>
+            <label><input type="checkbox" class="mod" data-id="glass" data-mult="1.0"> Glass Bones (0%) — Any damage immediately knocks you</label>
+          </div>
+
+          <div>
+            <label class="small">Exact multiplier (overrides checked modifiers if ≠ 1):</label>
+            <div class="row" style="margin-top:6px">
+              <input id="exactMult" type="number" step="0.01" min="0.01" value="1" />
+              <button id="applyExact" class="btn">Apply</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="small" style="margin-top:6px">Add custom echo (one-off):</label>
+            <div class="row" style="margin-top:6px">
+              <input id="customEchoLabel" type="text" placeholder="Label (optional)" />
+              <input id="customEchoValue" type="number" placeholder="Echo value" min="0" style="width:120px" />
+              <button id="addCustom" class="btn">Add</button>
+            </div>
+          </div>
+
+          <div class="help">Tip: Use modifiers to simulate Echo stacks. Exact multiplier overrides mods while >1. Use custom echoes for unique rewards.</div>
+
+          <div class="summary" aria-live="polite">
+            <div class="rowline"><div class="muted-small">Base Echoes</div><div id="baseEchoes" class="big">0</div></div>
+            <div class="rowline"><div class="muted-small">Multiplier</div><div id="multiplier" class="big">1.00×</div></div>
+            <div class="rowline"><div class="muted-small">Total Echoes</div><div id="totalEchoes" class="big">0</div></div>
+            <div class="rowline"><div class="muted-small">Rank</div><div id="rank" class="rank-badge rank-E">E</div></div>
+          </div>
+
+          <div class="actions">
+            <button id="exportCSV" class="btn green">Export CSV</button>
+            <button id="shareText" class="btn" id="copy">Copy Summary</button>
+            <button id="clearCustom" class="btn secondary">Clear Custom</button>
+            <button id="toggleSound" class="btn secondary">Sound: On</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      Made for Deepwoken players — live rank, modifiers, and polished UI. Enjoy! ✨
+    </footer>
+  </div>
+
+  <script>
+    // ---------- PARTICLES & FOG ----------
+    (function initParticles(){
+      const canvas = document.getElementById('particle-canvas');
+      const ctx = canvas.getContext('2d');
+      let W = canvas.width = innerWidth;
+      let H = canvas.height = innerHeight;
+      const particles = [];
+      const PARTICLE_COUNT = Math.round((W * H) / 80000) + 40;
+
+      function rand(min,max){ return Math.random()*(max-min)+min; }
+      function makeParticle(){
+        return {
+          x: rand(0, W),
+          y: rand(0, H),
+          vx: rand(-0.05, 0.05),
+          vy: rand(-0.02, -0.25),
+          r: rand(0.6, 2.6),
+          hue: rand(200, 270),
+          life: rand(80, 280),
+          alpha: rand(0.06, 0.22)
+        };
+      }
+      for(let i=0;i<PARTICLE_COUNT;i++) particles.push(makeParticle());
+
+      function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+      addEventListener('resize', resize);
+
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+        // soft gradient vignette
+        const g = ctx.createLinearGradient(0,0,0,H);
+        g.addColorStop(0, 'rgba(10,18,30,0.08)');
+        g.addColorStop(1, 'rgba(2,6,12,0.2)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,W,H);
+
+        particles.forEach((p,i)=>{
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life--;
+          if(p.y < -50 || p.x < -50 || p.x > W+50 || p.life <=0){
+            particles[i] = makeParticle();
+            particles[i].x = rand(0,W); particles[i].y = H + rand(0,80); // respawn bottom
+          }
+          ctx.beginPath();
+          const g2 = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*8);
+          g2.addColorStop(0, 'rgba(160,200,255,'+ (p.alpha*1.0) +')');
+          g2.addColorStop(1, 'rgba(160,200,255,0)');
+          ctx.fillStyle = g2;
+          ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ---------- SOUND (synthesized chime) ----------
+    const soundState = { enabled: true };
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClick(){
+      if(!soundState.enabled) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 520;
+      g.gain.value = 0;
+      o.connect(g); g.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.08, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+      o.start(now);
+      o.stop(now + 0.32);
+    }
+    function playToggle(){
+      if(!soundState.enabled) return;
+      const o1 = audioCtx.createOscillator();
+      const o2 = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o1.type='sine'; o2.type='triangle';
+      o1.frequency.value = 640; o2.frequency.value = 420;
+      g.gain.value = 0;
+      o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.07, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+      o1.start(now); o2.start(now);
+      o1.stop(now + 0.46); o2.stop(now + 0.46);
+    }
+
+    // ---------- MAIN APP (Triumphs, modifiers, summary) ----------
+    const triumphs = [
+      { id: 'power', label: 'Power level (0.75 per Power level)', valuePer: 0.75, needsCount: true, defaultCount: 0 },
+      { id: 'craft_food', label: 'Cook a Food item', value: 1 },
+      { id: 'catch_fish', label: 'Catch a Fish (or anything using a Fishing Rod)', value: 1 },
+      { id: 'modify_mantra', label: 'Modify a Mantra', value: 1 },
+      { id: 'turn_pure_ore', label: 'Turn in a Pure Ore to a Blacksmith', value: 1 },
+      { id: 'chime_win', label: 'Win Chime of Conflict match', value: 1 },
+      { id: 'drink_attr', label: 'Drink an Attribute Flask (NOT an Attunement Potion)', value: 2 },
+      { id: 'craft_master_armor', label: 'Craft a Master Armor', value: 2 },
+      { id: 'use_deep_shrine', label: 'Use a Deep Shrine', value: 2 },
+      { id: 'deal_miserables', label: 'Make a deal with Misérables', value: 2 },
+      { id: 'bargain_yun', label: "Bargain with Yun'Shul (e.g., rerolling Resonance)", value: 2 },
+      { id: 'unbound_attr', label: 'Unbound an Attribute', value: 5 },
+      { id: 'obtain_oath', label: 'Obtain an Oath', value: 5 },
+      { id: 'soulbound_item', label: 'Soul-bound an enchanted or legendary item', value: 5 },
+      { id: 'enchant_item', label: 'Enchant an Item with Enchant Stone or Enchant Grease', value: 5 },
+      { id: 'laplace_enchant', label: 'Obtain an enchant from Laplace', value: 5 },
+      { id: 'pluripotent_alloy', label: 'Use Pluripotent Alloy', value: 5 },
+      { id: 'obtain_murmur', label: 'Obtain a Murmur', value: 5 },
+      { id: 'dread_serpent', label: 'Defeat Dread Serpent OR The Doom of Caeranthil', value: 5 },
+      { id: 'duke_ersia', label: 'Defeat Duke Erisia', value: 5 },
+      { id: 'primadon', label: 'Defeat Primadon or Elder Primadon', value: 5 },
+      { id: 'ferryman', label: 'Defeat The Ferryman', value: 5 },
+      { id: 'chaser', label: 'Defeat Chaser', value: 5 },
+      { id: 'doom_event', label: 'Defeat The Doom of Caeranthil or Interluminary Parasol', value: 5 },
+      { id: 'defeat_scion', label: 'Defeat Scion of Ethiron', value: 10 },
+      { id: 'hell_mode', label: 'Complete Hell Mode', value: 10 },
+      { id: 'layer2_floor1', label: 'Complete Layer 2 floor 1 without Light Hook', value: 10 },
+      { id: 'obtain_resonance', label: 'Obtain a Resonance', value: 15 }
+    ];
+
+    const triDiv = document.querySelector('#triumphs');
+    function createTriItem(t){
+      const wrap = document.createElement('div');
+      wrap.className = 'tri-item';
+      const left = document.createElement('div'); left.className = 'tri-left';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'tri-check'; cb.dataset.id = t.id;
+      const label = document.createElement('strong'); label.textContent = t.label;
+      left.appendChild(cb);
+      left.appendChild(label);
+
+      const right = document.createElement('div'); right.className = 'tri-right';
+      if (t.needsCount){
+        const num = document.createElement('input');
+        num.type = 'number'; num.min = 0; num.max = 999; num.value = t.defaultCount || 0;
+        num.className = 'tri-count'; num.dataset.id = t.id;
+        right.appendChild(num);
+      } else {
+        const val = document.createElement('div'); val.className = 'muted-small'; val.textContent = `Value: ${t.value ?? t.valuePer}`;
+        right.appendChild(val);
+      }
+
+      wrap.appendChild(left); wrap.appendChild(right);
+      // clicking container toggles checkbox (except inputs)
+      wrap.addEventListener('click', (e)=>{
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        cb.checked = !cb.checked;
+        playClick();
+        updateSummary();
+      });
+
+      // individual checkbox play
+      cb.addEventListener('change', ()=>{ playClick(); updateSummary(); });
+      triDiv.appendChild(wrap);
+    }
+    triumphs.forEach(createTriItem);
+
+    // state
+    let customTri = [];
+
+    function getSelectedTriumphs(){
+      const checks = Array.from(document.querySelectorAll('.tri-check')).filter(c=>c.checked);
+      const result = [];
+      const counts = {};
+      document.querySelectorAll('.tri-count').forEach(n => counts[n.dataset.id] = Number(n.value || 0));
+      checks.forEach(c=>{
+        const id = c.dataset.id;
+        const t = triumphs.find(x=>x.id === id);
+        if (!t) return;
+        if (t.needsCount){
+          const cnt = Math.max(0, counts[id] || 0);
+          result.push({ label: t.label, base: t.valuePer * cnt, cnt });
+        } else {
+          result.push({ label: t.label, base: t.value ?? t.valuePer ?? 0, cnt: 1 });
+        }
+      });
+      customTri.forEach(ct => result.push({ label: ct.label || 'Custom', base: Number(ct.value) || 0, cnt: 1 }));
+      return result;
+    }
+
+    function computeBase(){
+      return getSelectedTriumphs().reduce((s, it) => s + Number(it.base || 0), 0);
+    }
+
+    function computeMultiplier(){
+      const exact = Number(document.getElementById('exactMult').value || 1);
+      if (exact && Math.abs(exact - 1) > 1e-9) return exact;
+      const mods = Array.from(document.querySelectorAll('.mod')).filter(m=>m.checked).map(m=>Number(m.dataset.mult)||1);
+      // multiply mods
+      return Math.max(1, mods.reduce((a,b)=>a*b, 1));
+    }
+
+    // Rank logic with special S/W conditions:
+    // - W: total >= 140 AND "full echo modifiers" are active (all modifiers except Vow of Thorns and Glass Bones)
+    // - S: base >= 140 AND ALL triumphs (all listed triumphs) are checked (i.e., did every Echo task)
+    // Fallback ranges: A 112-139, B 87-111, C 60-86, D 30-59, E 0-29
+    function isAllEchoTasksCompleted(){
+      // consider "all tasks" as every triumph's checkbox checked
+      const allChecks = Array.from(document.querySelectorAll('.tri-check'));
+      if (allChecks.length === 0) return false;
+      return allChecks.every(ch => ch.checked);
+    }
+
+    function areAllModifiersExceptVowGlassChecked(){
+      // we expect modifier inputs to have data-id attributes
+      const mods = Array.from(document.querySelectorAll('.mod'));
+      // find vow and glass by data-id
+      const exclude = ['vow','glass'];
+      // check that every modifier which is not excluded is checked
+      const relevant = mods.filter(m => !exclude.includes(m.dataset.id));
+      if (relevant.length === 0) return false;
+      return relevant.every(m => m.checked);
+    }
+
+    function getRankFromTotalAndBase(total, base){
+      // W first (special condition)
+      if (total >= 140 && areAllModifiersExceptVowGlassChecked()) return 'W';
+      // S: base 140 (i.e., you did all echo tasks) — user said "S 140 (Must do all Echoes tasks)"
+      if (base >= 140 && isAllEchoTasksCompleted()) return 'S';
+      // numeric ranges
+      if (total >= 112) return 'A';
+      if (total >= 87) return 'B';
+      if (total >= 60) return 'C';
+      if (total >= 30) return 'D';
+      return 'E';
+    }
+
+    function updateSummary(){
+      const base = computeBase();
+      const mult = computeMultiplier();
+      const total = Math.round(base * mult * 100) / 100;
+
+      document.getElementById('baseEchoes').textContent = base;
+      document.getElementById('multiplier').textContent = mult.toFixed(2) + '×';
+      document.getElementById('totalEchoes').textContent = total;
+
+      // rank
+      const rank = getRankFromTotalAndBase(total, base);
+      const rankEl = document.getElementById('rank');
+      rankEl.textContent = rank;
+      rankEl.className = 'rank-badge rank-' + rank;
+    }
+
+    // ---------- UI actions ----------
+    document.getElementById('checkAll').addEventListener('click', ()=>{
+      document.querySelectorAll('.tri-check').forEach(c => c.checked = true);
+      playToggle();
+      updateSummary();
+    });
+    document.getElementById('uncheckAll').addEventListener('click', ()=>{
+      document.querySelectorAll('.tri-check').forEach(c => c.checked = false);
+      playToggle();
+      updateSummary();
+    });
+    document.getElementById('resetCounts').addEventListener('click', ()=>{
+      document.querySelectorAll('.tri-count').forEach(n => n.value = 0);
+      playToggle();
+      updateSummary();
+    });
+
+    // mod list behavior: show/hide when toggle unchecked (but we start visible)
+    document.getElementById('modAgg').addEventListener('change', (e)=>{
+      const show = e.target.checked;
+      const modList = document.getElementById('modList');
+      modList.style.display = show ? 'block' : 'none';
+      if (!show) { document.querySelectorAll('.mod').forEach(m => m.checked = false); }
+      playClick();
+      updateSummary();
+    });
+
+    document.getElementById('applyExact').addEventListener('click', ()=>{
+      const v = Number(document.getElementById('exactMult').value || 1);
+      if (v <= 0) { alert('Multiplier must be positive'); return; }
+      // uncheck presets to avoid confusion
+      document.getElementById('modAgg').checked = false;
+      document.getElementById('modList').style.display = 'none';
+      document.querySelectorAll('.mod').forEach(m => m.checked = false);
+      playClick();
+      updateSummary();
+    });
+
+    // adding custom echo
+    document.getElementById('addCustom').addEventListener('click', ()=>{
+      const label = document.getElementById('customEchoLabel').value.trim();
+      const val = Number(document.getElementById('customEchoValue').value || 0);
+      if (!val || val < 0) { alert('Enter a positive echo value'); return; }
+      const id = 'cust_' + (customTri.length + 1);
+      customTri.push({ id, label, value: val });
+
+      // create item in list
+      const wrapper = document.createElement('div'); wrapper.className = 'tri-item';
+      wrapper.innerHTML = `<div style="flex:1"><label><input type="checkbox" class="tri-check custom" data-id="${id}" checked> <strong>${label || 'Custom'}</strong></label></div>
+                           <div class="tri-right"><div class="muted-small">Value: ${val}</div></div>`;
+      // attach events
+      const cb = wrapper.querySelector('.tri-check');
+      cb.addEventListener('change', ()=>{ playClick(); updateSummary(); });
+      wrapper.addEventListener('click', (e)=>{ if (e.target.tagName === 'INPUT') return; cb.checked = !cb.checked; playClick(); updateSummary(); });
+      triDiv.appendChild(wrapper);
+
+      document.getElementById('customEchoLabel').value = '';
+      document.getElementById('customEchoValue').value = '';
+      playToggle();
+      updateSummary();
+    });
+
+    // export CSV
+    document.getElementById('exportCSV').addEventListener('click', ()=>{
+      const list = getSelectedTriumphs();
+      const rows = [['Label','Count','Base Echoes']];
+      list.forEach(it => rows.push([it.label || 'Custom', it.cnt || '', it.base]));
+      const base = computeBase(), mult = computeMultiplier(), total = Math.round(base*mult*100)/100;
+      rows.push([]); rows.push(['Base Total','',base]); rows.push(['Multiplier','',mult]); rows.push(['Total After Mult','',total]);
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'echoes_summary.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      playClick();
+    });
+
+    // copy summary
+    document.getElementById('shareText').addEventListener('click', ()=>{
+      const base = computeBase(), mult = computeMultiplier(), total = Math.round(base*mult*100)/100;
+      const rank = document.getElementById('rank').textContent;
+      const text = `Deepwoken Echoes — summary\nBase: ${base}\nMultiplier: ${mult.toFixed(2)}×\nTotal: ${total}\nRank: ${rank}`;
+      navigator.clipboard?.writeText(text).then(()=>{ alert('Summary copied!'); playClick(); }, ()=>{ alert('Unable to copy'); });
+    });
+
+    // clear custom
+    document.getElementById('clearCustom').addEventListener('click', ()=>{
+      document.querySelectorAll('.custom').forEach(el => el.closest('.tri-item').remove());
+      customTri = [];
+      playToggle();
+      updateSummary();
+    });
+
+    // toggle sound
+    document.getElementById('toggleSound').addEventListener('click', ()=>{
+      soundState.enabled = !soundState.enabled;
+      document.getElementById('toggleSound').textContent = 'Sound: ' + (soundState.enabled ? 'On' : 'Off');
+      playClick();
+    });
+
+    // attach mod change listeners to recalc
+    document.querySelectorAll('.mod').forEach(m => m.addEventListener('change', ()=>{ playClick(); updateSummary(); }));
+
+    // update on input change
+    document.addEventListener('input', ()=>{ updateSummary(); });
+    document.addEventListener('change', ()=>{ updateSummary(); });
+
+    // initial rendering
+    updateSummary();
+
+    // small helper: show hint for power
+    const powerHintEl = document.querySelector('#hint-power');
+    if (powerHintEl) powerHintEl.textContent = 'Enter current Power level (0.75 × level)';
+
+    // ensure audio context resumes on first user gesture (browsers block autoplay)
+    function unlockAudio() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      window.removeEventListener('pointerdown', unlockAudio);
+    }
+    window.addEventListener('pointerdown', unlockAudio, { once: true });
+  </script>
+</body>
+</html>
